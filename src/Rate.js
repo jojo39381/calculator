@@ -6,6 +6,7 @@ import {TextField} from '@material-ui/core'
 
 const FormStyle = {
     display:"block",
+
     margin: "15",
     backgroundColor: "white"
   }
@@ -13,7 +14,9 @@ const FormStyle = {
 const BodyStyle = {
     width: "60%",
     backgroundColor: "lightgray"
-}
+    marginBottom:15,
+    width:"60%"
+  }
 
 function Rate() {
     return (
@@ -27,4 +30,6 @@ function Rate() {
     )
 }
 
+
 export default Rate
+
