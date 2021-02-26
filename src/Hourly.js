@@ -10,6 +10,10 @@ import {MenuItem} from '@material-ui/core'
 import styled from 'styled-components'
 import Rate from './Rate'
 
+import Deduction from './Deduction'
+
+
+
 const FormStyle = {
   display:"block",
   marginBottom:15,
@@ -26,6 +30,9 @@ const SwitchStyle = {
 }
 
 const ButtonStyle = {
+
+  display: "block",
+
   marginBottom: 10
 }
 
@@ -135,11 +142,14 @@ function Hourly() {
     setFilingStatus(event.target.value)
   }
   const [rates, setRates] = useState([])
-  const handleSetRatesChange = (event) => {
-    const temp = rates
-    temp.push(Math.random(10))
-    setRates(temp)
-    
+
+  const handleSetRatesChange = () => {
+    setRates([...rates, 0])
+  }
+  const [deductions, setDeductions] = useState([])
+  const handleSetDeductionsChange = () => {
+    setDeductions([...deductions, 0])
+
   }
   return (
     <div className="Hourly">
@@ -171,9 +181,10 @@ function Hourly() {
             </TextField>
             <p>Do you have any rates to add?</p>
             <Button style={ButtonStyle} variant="contained" color="primary" onClick={handleSetRatesChange}>+ Add another rate</Button>
-            {rates.map((i) => {
-                
-              return <Rate key={Math.random(10)}></Rate>
+
+            {rates.map((id) => {
+              return <Rate key={id}></Rate>
+
             })}
             <p>Do you have any exemptions?</p>
             <FormControlLabel
@@ -265,6 +276,16 @@ function Hourly() {
                   </MenuItem>
                 ))}
             </TextField>
+
+            <h3 style={InstructionStyle}>Now for voluntary deductions:</h3>
+            <p>Do you have any voluntary deductions?</p>
+            <Button style={ButtonStyle} variant="contained" color="primary" onClick={handleSetDeductionsChange}>+ Add another deduction</Button>
+            {deductions.map((id) => {
+              return <Deduction key={id}></Deduction>
+            })}
+
+            <Button style={ButtonStyle} variant="contained" color="primary">Calculate</Button>
+
           </form>
           
         </div>
@@ -274,4 +295,6 @@ function Hourly() {
   );
 }
 
+
 export default Hourly
+
