@@ -1,6 +1,7 @@
-
 import './App.css';
+
 import React, {useState} from 'react';
+import {Button} from '@material-ui/core'
 import {TextField} from '@material-ui/core'
 import {InputLabel} from '@material-ui/core'
 import {FormControlLabel} from '@material-ui/core'
@@ -8,24 +9,24 @@ import {Switch} from '@material-ui/core'
 import {MenuItem} from '@material-ui/core'
 import styled from 'styled-components'
 import Rate from './Rate'
-import {Button} from '@material-ui/core'
+
 const FormStyle = {
   display:"block",
   marginBottom:15,
-  width:"40%"
+  width:"60%"
 }
 
 const FormDivStyle = {
   width:"40%",
   // marginLeft:"20%"
 }
-const ButtonStyle = {
-  marginTop:20,
-  marginBottom: 10,
-  width:"40%"
-}
+
 const SwitchStyle = {
   display:"block"
+}
+
+const ButtonStyle = {
+  marginBottom: 10
 }
 
 const BodyStyle = {
@@ -110,14 +111,17 @@ const generals = [
   "No"
 ]
 
-const filingStatuses = [{key: "Single", status:"Single or married filing separately"}, {key:"Married", status:"Married filing jointly"}, {key:"Head", status:"Head of Household"}]
+const filingStatuses = [
+  "Single or married filing separately", 
+  "Married filing jointly", 
+  "Head of Household"
+]
 
-function App() {
+function Hourly() {
   const [state, setState] = useState("Arizona")
   const handleStateChange = (event) => {
     setState(event.target.value)
   }
-
   const [freq, setFreq] = useState()
   const handleFreqChange = (event) => {
     setFreq(event.target.value)
@@ -138,17 +142,16 @@ function App() {
     
   }
   return (
-    <div className="App">
-      <header className="App-header">
+    <div className="Hourly">
+      <header className="Hourly-header">
         <div style={BodyStyle}>
-          <h1>Salary Paycheck Calculator</h1>
+          <h1>Hourly Paycheck Calculator</h1>
           <p>Find out your true estimated earnings after taxes</p>
-          <p>Salary Calculator</p> 
-          
-         
+          <p>Salary Calculator Hourly Calculator</p>
+        
           <form style={FormDivStyle} noValidate autoComplete="off">
             <h3 style={InstructionStyle}>First, tell us some general information:</h3>
-            <TextField type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" />
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Check date" variant="outlined" />
             <TextField
                 fullWidth={true}
                 style={FormStyle}
@@ -166,36 +169,48 @@ function App() {
                   </MenuItem>
                 ))}
             </TextField>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay" variant="outlined" />
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay YTD" variant="outlined" />
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" select label="Pay Frequency" variant="outlined" onChange={handleFreqChange}>
-            {freqs.map((freqOption) => (
-                    <MenuItem value={freqOption}>
-                      {freqOption}
-                    </MenuItem>
-                ))}
-            </TextField>
-                  
-            <InputLabel>Do you have any exemptions?</InputLabel>
-           
+            <p>Do you have any rates to add?</p>
+            <Button style={ButtonStyle} variant="contained" color="primary" onClick={handleSetRatesChange}>+ Add another rate</Button>
+            {rates.map((i) => {
+                
+              return <Rate key={Math.random(10)}></Rate>
+            })}
+            <p>Do you have any exemptions?</p>
             <FormControlLabel
               style={SwitchStyle}
-              control={<Switch  name="checkedA" color='primary' />}
+              control={<Switch  name="checkedA" />}
               label="Federal"
             />
             <FormControlLabel
-              style={SwitchStyle}
-              control={<Switch  name="checkedA" color='primary' />}
+              style={SwitchStyle}              
+              control={<Switch  name="checkedA" />}
               label="State"
             />
             <FormControlLabel
               style={SwitchStyle}
-              control={<Switch  name="checkedA" color='primary'/>}
+              control={<Switch  name="checkedA" />}
               label="Medicare"
             />
             <h3 style={InstructionStyle}>Now for some federal information:</h3>
-            
-            
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay" variant="outlined" />
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay YTD" variant="outlined" />
+            <TextField 
+                fullWidth={true} 
+                style={FormStyle} 
+                size="small" 
+                id="outlined-basic" 
+                select
+                label="Pay Frequency" 
+                value={freq}
+                onChange={handleFreqChange}
+                variant="outlined" 
+            >
+                {freqs.map((stateOption) => (
+                    <MenuItem value={stateOption}>
+                    {stateOption}
+                    </MenuItem>
+                ))}
+            </TextField>
             <TextField 
                 fullWidth={true} 
                 style={FormStyle} 
@@ -203,13 +218,13 @@ function App() {
                 id="outlined-basic" 
                 select
                 label="Federal filing status" 
-                
+                value={filingStatus}
                 onChange={handleFilingStatusChange}
                 variant="outlined" 
             >
-                {filingStatuses.map((statusDict) => (
-                  <MenuItem value={statusDict.key}>
-                    {statusDict.status}
+                {filingStatuses.map((stateOption) => (
+                  <MenuItem value={stateOption}>
+                    {stateOption}
                   </MenuItem>
                 ))}
             </TextField>
@@ -231,8 +246,7 @@ function App() {
                 ))}
             </TextField>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Step 3: Dependents amount" variant="outlined" />
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Step 4a: Other Income" variant="outlined" />
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Step 4b: Deductions" variant="outlined" />
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Step 4b: deductions" variant="outlined" />
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Additional federal witholding" variant="outlined" />
             <TextField 
                 fullWidth={true} 
@@ -251,15 +265,6 @@ function App() {
                   </MenuItem>
                 ))}
             </TextField>
-            <h3 style={InstructionStyle}>State Information:</h3>
-            <FormControlLabel
-              style={SwitchStyle}
-              control={<Switch  name="checkedA" />}
-              label="Are you exempt from state taxes?"
-            />
-             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="State elected percentage rate" variant="outlined" />
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Additional state withholding" variant="outlined" />
-            <Button style={ButtonStyle} variant="contained" color="primary">Continue</Button>
           </form>
           
         </div>
@@ -269,4 +274,4 @@ function App() {
   );
 }
 
-export default App;
+export default Hourly
