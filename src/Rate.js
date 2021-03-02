@@ -13,7 +13,7 @@ const FormStyle = {
 
 const BodyStyle = {
     width: "60%",
-    backgroundColor: "lightgray"
+    backgroundColor: "lightgray",
     marginBottom:15,
     width:"60%"
   }
@@ -21,11 +21,7 @@ const BodyStyle = {
 function Rate() {
     return (
         <div className="Rate">
-            <div style={BodyStyle}>
-                <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Amount" variant="outlined" />
-                <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Hours" variant="outlined" />
-                <Button color="primary">Delete rate</Button> 
-            </div>
+            
         </div>
     )
 }

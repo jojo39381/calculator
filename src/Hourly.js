@@ -13,7 +13,28 @@ import Rate from './Rate'
 import Deduction from './Deduction'
 
 
+const RateComponentStyle = {
+    display:"block",
+  
+    marginTop:15,
+    backgroundColor: "white"
+  }
+  
+  const RateBodyStyle = {
+    width: "60%",
+    padding:10,
+    backgroundColor: "lightgray",
+    marginBottom:15,
+  
+    
+  }
 
+  const RateDeleteButtonStyle = {
+     
+      width: "100%"
+  }
+
+  
 const FormStyle = {
   display:"block",
   marginBottom:15,
@@ -144,12 +165,42 @@ function Hourly() {
   const [rates, setRates] = useState([])
 
   const handleSetRatesChange = () => {
-    setRates([...rates, 0])
+    const temp = [...rates, Math.random(10)]
+    console.log(temp)
+    setRates(temp)
+  }
+
+  const handleDeleteRate = (id) => {
+      console.log(id)
+      const temp = [...rates]
+      const index = id
+    
+      
+      temp.splice(index, 1)
+
+      const anothertemp = [...ratesAmount]
+      anothertemp.splice(index, 1)
+
+    
+      setRates(temp)
+      setRatesAmount(anothertemp)
+
   }
   const [deductions, setDeductions] = useState([])
   const handleSetDeductionsChange = () => {
     setDeductions([...deductions, 0])
 
+  }
+
+
+
+
+  const [ratesAmount, setRatesAmount] = useState([])
+  const handleChangeRateAmount = (event, i) => {
+     
+    const temp = [...ratesAmount]
+    temp[i] = event.target.value
+    setRatesAmount(temp)
   }
   return (
     <div className="Hourly">
@@ -161,7 +212,7 @@ function Hourly() {
         
           <form style={FormDivStyle} noValidate autoComplete="off">
             <h3 style={InstructionStyle}>First, tell us some general information:</h3>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Check date" variant="outlined" />
+            <TextField type="date" fullWidth={true} style={FormStyle} size="small" id="outlined-basic"  variant="outlined" />
             <TextField
                 fullWidth={true}
                 style={FormStyle}
@@ -182,8 +233,15 @@ function Hourly() {
             <p>Do you have any rates to add?</p>
             <Button style={ButtonStyle} variant="contained" color="primary" onClick={handleSetRatesChange}>+ Add another rate</Button>
 
-            {rates.map((id) => {
-              return <Rate key={id}></Rate>
+            {rates.map((element, i) => {
+                
+              return (
+                <div style={RateBodyStyle} key={Math.random(10)}>
+                    <TextField fullWidth={true} style={RateComponentStyle} key={i} value={ratesAmount[i]} onChange={() => {handleChangeRateAmount(i)}} size="small" id="outlined-basic" label="Amount" variant="outlined" />
+                    <TextField fullWidth={true} style={RateComponentStyle} size="small" id="outlined-basic" label="Hours" variant="outlined" />
+                    <Button style={RateDeleteButtonStyle} onClick={() => {handleDeleteRate(i)}} color="primary">Delete rate</Button> 
+                </div>
+              )
 
             })}
             <p>Do you have any exemptions?</p>

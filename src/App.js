@@ -9,6 +9,14 @@ import {MenuItem} from '@material-ui/core'
 import styled from 'styled-components'
 import Rate from './Rate'
 import {Button} from '@material-ui/core'
+
+
+
+// rate style
+
+
+
+
 const FormStyle = {
   display:"block",
   marginBottom:15,
