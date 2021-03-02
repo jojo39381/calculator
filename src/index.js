@@ -6,7 +6,7 @@ import reportWebVitals from './reportWebVitals';
 import Hourly from './Hourly'
 ReactDOM.render(
   <React.StrictMode>
-    <Hourly></Hourly>
+    <App></App>
   </React.StrictMode>,
   document.getElementById('root')
 );
