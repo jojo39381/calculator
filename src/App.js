@@ -460,13 +460,15 @@ function App() {
     axios.post("https://engine.staging.joinpuzzl.com/api/taxparams/getTaxParameterDefinitions")
     .then((response) => {
       setAllStatesDetails(response.data.result)
-      console.log(response.data.result)
+     
     })
   }, [])
 
 
   const [state, setState] = useState("AZ")
   const [stateDetails, setStateDetails] = useState([])
+  const [result, setResult] = useState([])
+  const [calculated, setCalculated] = useState(false)
   // const handleStateChange = (event) => {
   //   const curState = event.target.value
   //   setState(curState)
@@ -480,7 +482,7 @@ function App() {
     const temp = {...userInput}
     temp[category][context] = value
     setUserInput(temp)
-    console.log(userInput)
+    
   }
 
 
@@ -510,6 +512,129 @@ function App() {
   //   setFilingStatus(event.target.value)
   // }
 
+  const submitForm = async (e) => {
+      e.preventDefault()
+      
+      const federalParams = []
+      const checkDate = userInput["general"]["date"]
+      const federal = userInput["federal"]
+      for (var key in federal) {
+          const curFederal = {"jurisdiction":"US", "code":key, "value":federal[key]}
+          federalParams.push(curFederal)
+      }
+   const firstCall = {
+        "wages": [
+            {
+                "payType": "REG",
+                "amount": userInput["general"]["gross_pay_YTD"],
+                "location": {
+                    "street1": userInput["general"]["address"],
+                    "street2": userInput["general"]["address_line_2"],
+                    "city": userInput["general"]["city"],
+                    "state": userInput["general"]["state"],
+                    "zip": userInput["general"]["zip"]
+                }
+            }
+        ],
+        "employeeConfig": {
+            "residency": 
+                {
+                    "street1": userInput["general"]["address"],
+                    "street2": userInput["general"]["address_line_2"],
+                    "city": userInput["general"]["city"],
+                    "state": userInput["general"]["state"],
+                    "zip": userInput["general"]["zip"]
+                },
+                "taxparams": federalParams,
+                "accruals": []
+        },
+        "companyConfig": {
+            "taxparams": []
+        },
+        "payFrequency": "annually",
+        "payDate": checkDate
+    }
+    
+    const withholdingsRequest = await axios.post("https://engine.staging.joinpuzzl.com/api/calculator/calcTax", firstCall)
+
+    const withholdings = withholdingsRequest.data.result
+    
+    var accrual_withholdings = []
+    for (var withholding in withholdings) {
+        const cur_withholding = {amount:withholding["withheld"], taxType:withholding["codename"]}
+        accrual_withholdings.push(cur_withholding)
+
+    }
+   
+    const dayBeforeCheckDate = new Date(checkDate)
+    dayBeforeCheckDate.setDate(dayBeforeCheckDate.getDate() - 1)
+    const dayBeforeString = dayBeforeCheckDate.toISOString().split('T')[0]
+    
+    const secondCall = {
+        "wages": [
+            {
+                "payType": "REG",
+                "amount": userInput["general"]["gross_pay"],
+                "location": {
+                    "street1": userInput["general"]["address"],
+                    "street2": userInput["general"]["address_line_2"],
+                    "city": userInput["general"]["city"],
+                    "state": userInput["general"]["state"],
+                    "zip": userInput["general"]["zip"]
+                }
+            }
+        ],
+        "employeeConfig": {
+            "residency": 
+                {
+                    "street1": userInput["general"]["address"],
+                    "street2": userInput["general"]["address_line_2"],
+                    "city": userInput["general"]["city"],
+                    "state": userInput["general"]["state"],
+                    "zip": userInput["general"]["zip"]
+                },
+                "taxparams": federalParams,
+                "accruals": [
+                    {
+                        "payDate": "1/1/2021",
+                        "residency":  {
+                            "street1": userInput["general"]["address"],
+                            "street2": userInput["general"]["address_line_2"],
+                            "city": userInput["general"]["city"],
+                            "state": userInput["general"]["state"],
+                            "zip": userInput["general"]["zip"]
+                        },
+                        "earnings": [
+                            {
+                                "location": {
+                                    "street1": userInput["general"]["address"],
+                                    "street2": userInput["general"]["address_line_2"],
+                                    "city": userInput["general"]["city"],
+                                    "state": userInput["general"]["state"],
+                                    "zip": userInput["general"]["zip"]
+                                },
+                                "amount": userInput["general"]["gross_pay_YTD"],
+                                "payType": "REG"
+                            }
+                        ],
+                        "withholdings": accrual_withholdings
+                    }
+                ]
+        },
+        "companyConfig": {
+            "taxparams": []
+        },
+        "payFrequency": userInput["general"]["pay_frequency"],
+        "payDate": userInput["general"]["date"]
+    } 
+     
+    const finalWithholdingsRequest = await axios.post("https://engine.staging.joinpuzzl.com/api/calculator/calcTax", secondCall)
+    const finalWithholdings = finalWithholdingsRequest.data.result
+    setResult(finalWithholdings)
+    setCalculated(true)
+    
+      
+  }
 
   return (
     <div className="App">
@@ -520,9 +645,13 @@ function App() {
           <p>Salary Calculator</p> 
           
          
-          <form style={FormDivStyle} noValidate autoComplete="off">
+          <form style={FormDivStyle} noValidate autoComplete="off" onSubmit={submitForm}>
             <h3 style={InstructionStyle}>First, tell us some general information:</h3>
-            <TextField type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" />
+            <TextField type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" value={userInput["general"]["date"] || new Date().toISOString().split('T')[0]} onChange={(e) => {handleFormChange(e, "general", "date")}}/>
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="address" value={userInput["general"]["address"] || ""} onChange={(e) => {handleFormChange(e, "general", "address")}}/>
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="address line 2" value={userInput["general"]["address_line_2"] || ""} onChange={(e) => {handleFormChange(e, "general", "address_line_2")}}/>
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="city" value={userInput["general"]["city"] || ""} onChange={(e) => {handleFormChange(e, "general", "city")}}/>
+            
             <TextField
                 fullWidth={true}
                 style={FormStyle}
@@ -540,6 +669,7 @@ function App() {
                   </MenuItem>
                 ))}
             </TextField>
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="zip" value={userInput["general"]["zip"] || ""} onChange={(e) => {handleFormChange(e, "general", "zip")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay" variant="outlined"  value={userInput["general"]["gross_pay"] || ""} onChange={(e) => {handleFormChange(e, "general", "gross_pay")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay YTD" variant="outlined" value={userInput["general"]["gross_pay_YTD"] || ""} onChange={(e) => {handleFormChange(e, "general", "gross_pay_YTD")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" select label="Pay Frequency" variant="outlined" value={userInput["general"]["pay_frequency"] || freqs[0]} onChange={(e) => {handleFormChange(e, "general", "pay_frequency")}}>
@@ -603,7 +733,7 @@ function App() {
             />
     
            { userInput["general"]["state"] && allStatesDetails[userInput["general"]["state"]].map((detail) => {
-             console.log(detail.options)
+            
              if (detail.type == "options") {
                return (
                 <TextField fullWidth={true} style={FormStyle} value={detail.options[0].code} size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["state"][detail.code] || detail.options[0].code} onChange={(e) => {handleFormChange(e, "state", detail.code)}}>
@@ -629,7 +759,7 @@ function App() {
            }
             
           
-            <Button style={ButtonStyle} variant="contained" color="primary">Continue</Button>
+            <Button type="submit" style={ButtonStyle} variant="contained" color="primary">Continue</Button>
           </form>
           
         </div>
