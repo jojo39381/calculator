@@ -8,13 +8,69 @@ import {Switch} from '@material-ui/core'
 import {MenuItem} from '@material-ui/core'
 
 
-import {Button} from '@material-ui/core'
+
 import axios from 'axios'
 
+import {Button} from '@material-ui/core'
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import Paper from '@material-ui/core/Paper';
+import { withStyles, makeStyles } from '@material-ui/core/styles';
+import styled from 'styled-components'
 
 // rate style
 
+const ResultBodyStyle = {
+    width: "30%",
+    margin: "0 auto"
+}
 
+function createData(name, amount) {
+    return {name, amount};
+}
+
+const useStyles = makeStyles({
+    table: {
+        minWidth: 400,
+    },
+});
+
+const BoldTableCell = withStyles((theme) => ({
+    body: {
+      fontWeight: "bold",
+    },
+}))(TableCell);
+
+const BackButton = withStyles({
+    root: {
+      color: '#0066ff',
+    },
+    label: {
+      textTransform: 'none',
+    },
+})(Button);
+
+const EditButton = withStyles({
+    root: {
+        borderRadius: 4,
+        borderColor: "#E2E9F0",
+        borderWidth: 1,
+        color: '#0066ff',
+        height: 41,
+        width: 69
+    },
+    label: {
+      textTransform: 'capitalize',
+    },
+})(Button);
+
+
+
+////////////////////////
 
 const FormStyle = {
   display:"block",
@@ -23,7 +79,7 @@ const FormStyle = {
 }
 
 const FormDivStyle = {
-  width:"40%",
+  width:"100%",
   // marginLeft:"20%"
 }
 const ButtonStyle = {
@@ -85,10 +141,6 @@ const states = [
     {
         "name": "District Of Columbia",
         "abbreviation": "DC"
-    },
-    {
-        "name": "Federated States Of Micronesia",
-        "abbreviation": "FM"
     },
     {
         "name": "Florida",
@@ -302,7 +354,7 @@ const generals = [
 
 
 
-const filingStatuses = [{key: "Single", status:"Single or married filing separately"}, {key:"Married", status:"Married filing jointly"}, {key:"Head", status:"Head of Household"}]
+
 
 
 
@@ -452,10 +504,37 @@ const federalTaxParams = [{
 }]
 
 
+var information = [
+    createData("Check date"),
+    createData("Gross pay"),
+    createData("Gross salary year to date"),
+    createData("Pay frequency"),
+    createData("Federal filing status"),
+    createData("# of federal allowances"),
+    createData("Round federal withholding"),
+    createData("Additional federal witholding"),
+    createData("Addition state witholding"),
+    createData("State filing status"),
+    createData("Dependents"),
+    createData("Exempt from federal tax"),
+    createData("Exempt from FICA tax"),
+    createData("Exempt from medicare tax"),
+    createData("Exempt from state tax")
+];
+
 function App() {
 
+    
+    
 
-  const [allStatesDetails, setAllStatesDetails] = useState({})
+    
+
+    
+
+
+
+
+  const [allStatesDetails, setAllStatesDetails] = useState()
   useEffect(() => {
     axios.post("https://engine.staging.joinpuzzl.com/api/taxparams/getTaxParameterDefinitions")
     .then((response) => {
@@ -469,6 +548,7 @@ function App() {
   const [stateDetails, setStateDetails] = useState([])
   const [result, setResult] = useState([])
   const [calculated, setCalculated] = useState(false)
+  const [calculations, setCalculations] =useState([])
   // const handleStateChange = (event) => {
   //   const curState = event.target.value
   //   setState(curState)
@@ -480,6 +560,11 @@ function App() {
   const handleFormChange = (event, category, context) => {
     const value = event.target.value
     const temp = {...userInput}
+    if (category == "general" && context == "state") {
+        temp["state"] = {
+
+        }
+    }
     temp[category][context] = value
     setUserInput(temp)
     
@@ -488,7 +573,8 @@ function App() {
 
   const [userInput, setUserInput] = useState({
     "general": {
-
+        "date": new Date().toISOString().split('T')[0],
+        "state": "CA"
     },
     "federal": {
 
@@ -513,8 +599,8 @@ function App() {
   // }
 
   const submitForm = async (e) => {
-      e.preventDefault()
-      
+        e.preventDefault()
+        console.log(userInput["state"])  
       const federalParams = []
       const checkDate = userInput["general"]["date"]
       const federal = userInput["federal"]
@@ -522,6 +608,15 @@ function App() {
           const curFederal = {"jurisdiction":"US", "code":key, "value":federal[key]}
           federalParams.push(curFederal)
       }
+
+      const stateParams = []
+      const stateP = userInput["state"]
+      for (var key in stateP) {
+          const curState = {"jurisdiction":userInput["general"]["state"], "code":key, "value":stateP[key]}
+          stateParams.push(curState)
+      }
+      console.log(stateParams)
+
    const firstCall = {
         "wages": [
             {
@@ -545,7 +640,7 @@ function App() {
                     "state": userInput["general"]["state"],
                     "zip": userInput["general"]["zip"]
                 },
-                "taxparams": federalParams,
+                "taxparams": federalParams.concat(stateParams),
                 "accruals": []
         },
         "companyConfig": {
@@ -560,8 +655,11 @@ function App() {
     const withholdings = withholdingsRequest.data.result
     
     var accrual_withholdings = []
-    for (var withholding in withholdings) {
-        const cur_withholding = {amount:withholding["withheld"], taxType:withholding["codename"]}
+    
+    for (var i = 0; i < withholdings.length; i++) {
+        const witholdingObject = withholdings[i]
+       
+        const cur_withholding = {amount:witholdingObject.withheld, taxType:witholdingObject.codename}
         accrual_withholdings.push(cur_withholding)
 
     }
@@ -569,7 +667,7 @@ function App() {
     const dayBeforeCheckDate = new Date(checkDate)
     dayBeforeCheckDate.setDate(dayBeforeCheckDate.getDate() - 1)
     const dayBeforeString = dayBeforeCheckDate.toISOString().split('T')[0]
-    
+ 
     const secondCall = {
         "wages": [
             {
@@ -593,10 +691,10 @@ function App() {
                     "state": userInput["general"]["state"],
                     "zip": userInput["general"]["zip"]
                 },
-                "taxparams": federalParams,
+                "taxparams": federalParams.concat(stateParams),
                 "accruals": [
                     {
-                        "payDate": "1/1/2021",
+                        "payDate": dayBeforeString,
                         "residency":  {
                             "street1": userInput["general"]["address"],
                             "street2": userInput["general"]["address_line_2"],
@@ -631,17 +729,84 @@ function App() {
     const finalWithholdingsRequest = await axios.post("https://engine.staging.joinpuzzl.com/api/calculator/calcTax", secondCall)
     const finalWithholdings = finalWithholdingsRequest.data.result
     setResult(finalWithholdings)
-    setCalculated(true)
     
+
+    
+    const grossPay = userInput["general"]["gross_pay"]
+    var curCalculations = [createData("Gross pay", grossPay)]
       
+    var amountSubtracted = 0
+    finalWithholdings.map((row) => {
+            curCalculations.push(createData(row["name"], row["withheld"]))
+            amountSubtracted += row["withheld"]
+        }
+    )
+    curCalculations.push(createData("Net pay", grossPay - amountSubtracted));
+
+    setCalculations(curCalculations)
+    setCalculated(true)
   }
 
+  const backToInput = () => {
+      setCalculated(false)
+      setCalculations([])
+      
+  }
+  const classes = useStyles();
   return (
     <div className="App">
-      <header className="App-header">
-        <div style={BodyStyle}>
-          <h1>Salary Paycheck Calculator</h1>
-          <p>Find out your true estimated earnings after taxes</p>
+      <header className="App-header"/>
+      {calculated ?
+            <div style={ResultBodyStyle}>
+                    <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
+                    <InputLabel style={InstructionStyle}>Let's take a look at your estimated earnings after taxes</InputLabel>
+                    <BackButton style={{marginTop: 37}} onClick={backToInput}> Back to calculators </BackButton>
+                    <h2 style={InstructionStyle}>Your salary paycheck calculation:</h2>
+                        <TableContainer component={Paper}>
+                            <Table className={classes.table} aria-label="simple table" size='small'>
+                                <TableBody>
+                                    {calculations.map((row) => (
+                                    <TableRow key={row.name}>
+                                        { row.name != "Net pay" ? 
+                                            <TableCell component="th" scope="row">
+                                                {row.name}
+                                            </TableCell> :
+                                            <BoldTableCell component="th" scope="row">
+                                                {row.name}
+                                            </BoldTableCell>
+                                        }
+                                        { row.name != "Net pay" ? 
+                                            <TableCell align="right">{"$" + row.amount}</TableCell> :
+                                            <BoldTableCell align="right">{"$" + row.amount}</BoldTableCell>
+                                        }
+                                        
+                                    </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    <h2 style={InstructionStyle}>Results are based on:</h2>
+                    <TableContainer component={Paper}>
+                        <Table className={classes.table} aria-label="simple table" size='small'>
+                            <TableBody>
+                                {information.map((row) => (
+                                <TableRow key={row.name}>
+                                    <TableCell component="th" scope="row">
+                                    {row.name}
+                                    </TableCell>
+                                    <TableCell align="right">{"$" + row.amount}</TableCell>
+                                </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                    <EditButton style={{marginTop: 26}} variant="outlined">Edit</EditButton>
+                </div>
+
+        : 
+        <div style={ResultBodyStyle}>
+          <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
+          <p style={InstructionStyle}>Find out your true estimated earnings after taxes</p>
           <p>Salary Calculator</p> 
           
          
@@ -702,6 +867,7 @@ function App() {
            { federalTaxParams && federalTaxParams.map((detail) => {
              
              if (detail.type == "options") {
+                userInput["federal"][detail.code] = detail.options[0].code
                return (
                 <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["federal"][detail.code] || detail.options[0].code} onChange={(e) => {handleFormChange(e, "federal", detail.code)}}>
                {detail.options.map((option) => (
@@ -712,6 +878,18 @@ function App() {
                 </TextField>
                )
              }
+             else if (detail.type == "boolean") {
+                userInput["federal"][detail.code] = false
+                return (
+                <TextField fullWidth={true} style={FormStyle}  size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["federal"][detail.code] || false} onChange={(e) => {handleFormChange(e, "federal", detail.code)}}>
+               {[{code:"Yes", value:true}, {code:"No", value:false}].map((option) => (
+                <MenuItem value={option.value}>
+                    {option.code}
+                  </MenuItem>
+               ))}
+                </TextField>
+               )
+            }
             else {
               return (
                 <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined"  value={userInput["federal"][detail.code] || ""} onChange={(e) => {handleFormChange(e, "federal", detail.code)}}/>
@@ -732,11 +910,12 @@ function App() {
               label="Are you exempt from state taxes?"
             />
     
-           { userInput["general"]["state"] && allStatesDetails[userInput["general"]["state"]].map((detail) => {
+           { userInput["general"]["state"] && allStatesDetails && allStatesDetails[userInput["general"]["state"]].map((detail) => {
             
              if (detail.type == "options") {
+               userInput["state"][detail.code] = detail.options[0].code
                return (
-                <TextField fullWidth={true} style={FormStyle} value={detail.options[0].code} size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["state"][detail.code] || detail.options[0].code} onChange={(e) => {handleFormChange(e, "state", detail.code)}}>
+                <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["state"][detail.code] || detail.options[0].code} onChange={(e) => {handleFormChange(e, "state", detail.code)}}>
                {detail.options.map((option) => (
                 <MenuItem value={option.code}>
                     {option.name}
@@ -745,6 +924,18 @@ function App() {
                 </TextField>
                )
              }
+            else if (detail.type == "boolean") {
+                userInput["state"][detail.code] = false
+                return (
+                <TextField fullWidth={true} style={FormStyle}  size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["state"][detail.code] || false} onChange={(e) => {handleFormChange(e, "state", detail.code)}}>
+               {[{code:"Yes", value:true}, {code:"No", value:false}].map((option) => (
+                <MenuItem value={option.value}>
+                    {option.code}
+                  </MenuItem>
+               ))}
+                </TextField>
+               )
+            }
             else {
               return (
                 <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined" value={userInput["state"][detail.code] || ""} onChange={(e) => {handleFormChange(e, "state", detail.code)}}/>
@@ -763,9 +954,23 @@ function App() {
           </form>
           
         </div>
-
-      </header>
+        
+        
+        
+        
+        
+        }
+        
+        
     </div>
+
+
+
+
+
+
+
+
   );
 }
 

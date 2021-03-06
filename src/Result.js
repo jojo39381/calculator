@@ -82,6 +82,7 @@ var information = [
     createData("Exempt from state tax")
 ];
 
+
 const response = require("./Response.json")
 var amountSubtracted = 0
 response.result.map((row) => {
