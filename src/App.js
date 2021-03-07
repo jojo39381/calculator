@@ -68,7 +68,18 @@ const EditButton = withStyles({
     },
 })(Button);
 
-
+const ContinueButton = withStyles({
+    root: {
+        borderRadius: 4,
+        backgroundColor: 'black',
+        color: 'white',
+        height: 41,
+        width: 69
+    },
+    label: {
+      textTransform: 'capitalize',
+    },
+})(Button);
 
 ////////////////////////
 
@@ -747,7 +758,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header"/>
-      {calculated ?
+      {!calculated ?
             <div style={ResultBodyStyle}>
                     <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
                     <InputLabel style={InstructionStyle}>Let's take a look at your estimated earnings after taxes</InputLabel>
@@ -791,6 +802,7 @@ function App() {
                             </TableBody>
                         </Table>
                     </TableContainer>
+
                     <EditButton style={{marginTop: 26}} variant="outlined">Edit</EditButton>
                 </div>
 
@@ -836,23 +848,6 @@ function App() {
                 ))}
             </TextField>
                   
-            <InputLabel>Do you have any exemptions?</InputLabel>
-           
-            <FormControlLabel
-              style={SwitchStyle}
-              control={<Switch  name="checkedA" color='primary' />}
-              label="Federal"
-            />
-            <FormControlLabel
-              style={SwitchStyle}
-              control={<Switch  name="checkedA" color='primary' />}
-              label="State"
-            />
-            <FormControlLabel
-              style={SwitchStyle}
-              control={<Switch  name="checkedA" color='primary'/>}
-              label="Medicare"
-            />
             <h3 style={InstructionStyle}>Now for some federal information:</h3>
                 
            { federalTaxParams && federalTaxParams.map((detail) => {
@@ -893,14 +888,6 @@ function App() {
 
             })
            }
-
-            <h3 style={InstructionStyle}>State Information:</h3>
-            <FormControlLabel
-              style={SwitchStyle}
-              control={<Switch  name="checkedA" />}
-              label="Are you exempt from state taxes?"
-            />
-    
            { userInput["general"]["state"] && allStatesDetails && allStatesDetails[userInput["general"]["state"]].map((detail) => {
             
              if (detail.type === "options") {
@@ -941,7 +928,7 @@ function App() {
            }
             
           
-            <Button type="submit" style={ButtonStyle} variant="contained" color="primary">Continue</Button>
+            <ContinueButton type="submit" style={ButtonStyle} variant="contained" color="primary">Continue</ContinueButton>
           </form>
           
         </div>
