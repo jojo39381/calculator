@@ -3,12 +3,10 @@ import './App.css';
 import React, {useState, useEffect} from 'react';
 import {TextField} from '@material-ui/core'
 import {InputLabel} from '@material-ui/core'
-import {FormControlLabel} from '@material-ui/core'
-import {Switch} from '@material-ui/core'
+
 import {MenuItem} from '@material-ui/core'
 
 
-import { shadows } from '@material-ui/system';
 import axios from 'axios'
 
 import {Button} from '@material-ui/core'
@@ -18,9 +16,9 @@ import TableBody from '@material-ui/core/TableBody';
 import TableContainer from '@material-ui/core/TableContainer';
 
 import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
-import { withStyles, makeStyles } from '@material-ui/core/styles';
 
+import { withStyles, makeStyles } from '@material-ui/core/styles';
+import Grid from '@material-ui/core/Grid';
 
 // rate style
 
@@ -38,7 +36,7 @@ const TableCell = withStyles({
 
 
 const ResultBodyStyle = {
-    width: "30%",
+    width: "90%",
     margin: "0 auto"
 }
 
@@ -99,7 +97,7 @@ const ContinueButton = withStyles({
 const FormStyle = {
   display:"block",
   marginBottom:15,
-  width:"60%"
+  width:"80%"
 }
 
 const FormDivStyle = {
@@ -111,9 +109,7 @@ const ButtonStyle = {
   marginBottom: 10,
   width:"40%"
 }
-const SwitchStyle = {
-  display:"block"
-}
+
 
 const InstructionStyle = {
   fontFamily: 'Inter'
@@ -538,17 +534,6 @@ var information = [
 ];
 
 function App() {
-
-    
-    
-
-    
-
-    
-
-
-
-
   const [allStatesDetails, setAllStatesDetails] = useState()
   useEffect(() => {
     axios.post("https://engine.staging.joinpuzzl.com/api/taxparams/getTaxParameterDefinitions")
@@ -558,20 +543,8 @@ function App() {
     })
   }, [])
 
-
-
-
-  
   const [calculated, setCalculated] = useState(false)
   const [calculations, setCalculations] =useState([])
-  // const handleStateChange = (event) => {
-  //   const curState = event.target.value
-  //   setState(curState)
-  //   console.log(allStatesDetails[curState])
-  //   setStateDetails(allStatesDetails[curState])
-
-  // }
-
   const handleFormChange = (event, category, context) => {
     const value = event.target.value
     const temp = {...userInput}
@@ -584,8 +557,6 @@ function App() {
     setUserInput(temp)
     
   }
-
-
   const [userInput, setUserInput] = useState({
     "general": {
         "date": new Date().toISOString().split('T')[0],
@@ -600,23 +571,57 @@ function App() {
 
     }
   })
+ 
+  const generalTaxParams = ["date", "address", "address_line_2", "state", "gross_pay", "gross_pay_YTD", "pay_frequency"]
+  const validateForm = () => {
+     
+    for (var k = 0; k < generalTaxParams.length; k++) {
+        const key = generalTaxParams[k]
+        if (key === "address_line_2" || key === "gross_pay_YTD") {
+            continue
+        }
+        if (!(key in userInput["general"]) || userInput["general"][key] === "" ) {
+            console.log(key)
+            return false
+        }
 
-  // const [freq, setFreq] = useState()
-  // const handleFreqChange = (event) => {
-  //   setFreq(event.target.value)
-  // }
-  // const [general, setGeneral] = useState()
-  // const handleGeneralChange = (event) => {
-  //   setGeneral(event.target.value)
-  // }
-  // const [filingStatus, setFilingStatus] = useState()
-  // const handleFilingStatusChange = (event) => {
-  //   setFilingStatus(event.target.value)
-  // }
+
+    }
+        
+      
+      for (var i = 0; i < federalTaxParams.length; i++) {
+        const key = federalTaxParams[i].code
+        if (!(key in userInput["federal"]) || userInput["federal"][key] === "" ) {
+            console.log(key)
+            return false
+        }
+
+
+    }
+    for (var j = 0; j < allStatesDetails[userInput["general"]["state"]].length; j++) {
+        const key = allStatesDetails[userInput["general"]["state"]][j].code
+        if (!(key in userInput["state"]) || userInput["state"][key] === "" ) {
+            console.log(key)
+            return false
+        }
+
+
+    }
+    return true
+
+
+
+
+
+
+    }
 
   const submitForm = async (e) => {
         e.preventDefault()
-        console.log(userInput["state"])  
+        if (!validateForm()) {
+            alert("wrong form")
+        }
+       
       const federalParams = []
       const checkDate = userInput["general"]["date"]
       const federal = userInput["federal"]
@@ -631,7 +636,7 @@ function App() {
           const curState = {"jurisdiction":userInput["general"]["state"], "code":stateKey, "value":stateP[stateKey]}
           stateParams.push(curState)
       }
-      console.log(stateParams)
+  
 
    const firstCall = {
         "wages": [
@@ -758,6 +763,7 @@ function App() {
         }
     )
     curCalculations.push(createData("Net pay", grossPay - amountSubtracted));
+    
 
     setCalculations(curCalculations)
     setCalculated(true)
@@ -772,7 +778,9 @@ function App() {
   return (
     <div className="App">
       <header className="App-header"/>
-      {!calculated ?
+      {calculated ?
+            <Grid  container spacing={12}>
+            <Grid style={{ margin:"0 auto"}} item xs={11} md={6} lg={4}>
             <div style={ResultBodyStyle}>
                     <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
                     <InputLabel style={InstructionStyle}>Let's take a look at your estimated earnings after taxes</InputLabel>
@@ -817,10 +825,13 @@ function App() {
                         </Table>
                     </TableContainer>
 
-                    <EditButton style={{marginTop: 26}} variant="outlined">Edit</EditButton>
+                    <EditButton style={{marginTop: 26}} variant="outlined" onClick={backToInput}>Edit</EditButton>
                 </div>
-
+                </Grid>
+                </Grid>
         : 
+        <Grid  container spacing={12}>
+        <Grid style={{ margin:"0 auto"}} item xs={9} md={6} lg={4}>
         <div style={ResultBodyStyle}>
           <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
           <p style={InstructionStyle}>Find out your true estimated earnings after taxes</p>
@@ -829,7 +840,7 @@ function App() {
          
           <form style={FormDivStyle} noValidate autoComplete="off" onSubmit={submitForm}>
             <h3 style={InstructionStyle}>First, tell us some general information:</h3>
-            <TextField type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" value={userInput["general"]["date"] || new Date().toISOString().split('T')[0]} onChange={(e) => {handleFormChange(e, "general", "date")}}/>
+            <TextField label="check date" type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" value={userInput["general"]["date"] || new Date().toISOString().split('T')[0]} onChange={(e) => {handleFormChange(e, "general", "date")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="address" value={userInput["general"]["address"] || ""} onChange={(e) => {handleFormChange(e, "general", "address")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="address line 2" value={userInput["general"]["address_line_2"] || ""} onChange={(e) => {handleFormChange(e, "general", "address_line_2")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="city" value={userInput["general"]["city"] || ""} onChange={(e) => {handleFormChange(e, "general", "city")}}/>
@@ -895,13 +906,10 @@ function App() {
                 <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined"  value={userInput["federal"][detail.code] || ""} onChange={(e) => {handleFormChange(e, "federal", detail.code)}}/>
               )
             }
-
-
-
-
-
             })
+            
            }
+           <h3 style={InstructionStyle}>Now for some state information:</h3>
            { userInput["general"]["state"] && allStatesDetails && allStatesDetails[userInput["general"]["state"]].map((detail) => {
             
              if (detail.type === "options") {
@@ -946,7 +954,8 @@ function App() {
           </form>
           
         </div>
-        
+       </Grid>
+       </Grid>
         
         
         
