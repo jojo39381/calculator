@@ -8,13 +8,13 @@ import {Switch} from '@material-ui/core'
 import {MenuItem} from '@material-ui/core'
 
 
-
+import { shadows } from '@material-ui/system';
 import axios from 'axios'
 
 import {Button} from '@material-ui/core'
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
+
 import TableContainer from '@material-ui/core/TableContainer';
 
 import TableRow from '@material-ui/core/TableRow';
@@ -23,6 +23,19 @@ import { withStyles, makeStyles } from '@material-ui/core/styles';
 
 
 // rate style
+
+
+
+
+
+import MuiTableCell from "@material-ui/core/TableCell";
+
+const TableCell = withStyles({
+  root: {
+    borderBottom: "0.5px solid #B2BEC3"
+  }
+})(MuiTableCell);
+
 
 const ResultBodyStyle = {
     width: "30%",
@@ -565,7 +578,8 @@ function App() {
   const [userInput, setUserInput] = useState({
     "general": {
         "date": new Date().toISOString().split('T')[0],
-        "state": "CA"
+        "state": "CA",
+        "pay_frequency": "Daily"
     },
     "federal": {
 
@@ -747,14 +761,14 @@ function App() {
   return (
     <div className="App">
       <header className="App-header"/>
-      {calculated ?
+      {!calculated ?
             <div style={ResultBodyStyle}>
                     <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
                     <InputLabel style={InstructionStyle}>Let's take a look at your estimated earnings after taxes</InputLabel>
                     <BackButton style={{marginTop: 37}} onClick={backToInput}> Back to calculators </BackButton>
                     <h2 style={InstructionStyle}>Your salary paycheck calculation:</h2>
-                        <TableContainer component={Paper}>
-                            <Table className={classes.table} aria-label="simple table" size='small'>
+                        <TableContainer  >
+                            <Table className={classes.table} aria-label="simple table" size='small' >
                                 <TableBody>
                                     {calculations.map((row) => (
                                     <TableRow key={row.name}>
@@ -777,11 +791,11 @@ function App() {
                             </Table>
                         </TableContainer>
                     <h2 style={InstructionStyle}>Results are based on:</h2>
-                    <TableContainer component={Paper}>
+                    <TableContainer style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderBottom:"none"}}>
                         <Table className={classes.table} aria-label="simple table" size='small'>
                             <TableBody>
                                 {information.map((row) => (
-                                <TableRow key={row.name}>
+                                <TableRow key={row.name} >
                                     <TableCell component="th" scope="row">
                                     {row.name}
                                     </TableCell>
