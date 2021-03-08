@@ -97,7 +97,7 @@ const ContinueButton = withStyles({
 const FormStyle = {
   display:"block",
   marginBottom:15,
-  width:"80%"
+  width:"90%"
 }
 
 const FormDivStyle = {
