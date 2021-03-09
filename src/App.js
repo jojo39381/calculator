@@ -794,7 +794,7 @@ const yes_or_no = [{code:"Yes", value:true}, {code:"No", value:false}]
       <header className="App-header"/>
       {calculated ?
             <Grid  container spacing={12}>
-            <Grid style={{ margin:"0 auto"}} item xs={11} md={6} lg={4}>
+            <Grid style={{ margin:"0 auto"}} item xs={12} md={6} lg={4}>
             <div style={ResultBodyStyle}>
                     <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
                     <InputLabel style={InstructionStyle}>Let's take a look at your estimated earnings after taxes</InputLabel>
