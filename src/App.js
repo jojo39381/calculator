@@ -516,21 +516,6 @@ const federalTaxParams = [{
 
 
 var information = [
-    createData("Check date"),
-    createData("Gross pay"),
-    createData("Gross salary year to date"),
-    createData("Pay frequency"),
-    createData("Federal filing status"),
-    createData("# of federal allowances"),
-    createData("Round federal withholding"),
-    createData("Additional federal witholding"),
-    createData("Addition state witholding"),
-    createData("State filing status"),
-    createData("Dependents"),
-    createData("Exempt from federal tax"),
-    createData("Exempt from FICA tax"),
-    createData("Exempt from medicare tax"),
-    createData("Exempt from state tax")
 ];
 
 function App() {
@@ -549,26 +534,46 @@ function App() {
     const value = event.target.value
     const temp = {...userInput}
     if (category === "general" && context === "state") {
-        temp["state"] = {
-
+        const tempState = {}
+        const cur = allStatesDetails[value]
+        console.log(cur)
+        for (var i = 0; i < cur.length; i++) {
+            
+            if (cur[i].type === "boolean") {
+                tempState[cur[i].code] = false
+            }
+            else if (cur[i].type === "options") {
+                tempState[cur[i].code] = cur[i].options[0].code
+            }
+            
         }
+        temp["state"] = tempState
+        
     }
     temp[category][context] = value
     setUserInput(temp)
+    console.log(temp)
+ 
     
   }
   const [userInput, setUserInput] = useState({
     "general": {
         "date": new Date().toISOString().split('T')[0],
-        "state": "CA",
+        "state": "AZ",
         "pay_frequency": "Daily"
     },
     "federal": {
-
+        "FILINGSTATUS":"S",
+        "IS_NON_RESIDENT_ALIEN":false,
+        "TWO_JOBS":false,
+        "EXEMPT":false,
+        "SUBJECT":false
     },
 
     "state": {
-
+       "RATE":"R0",
+       "EXEMPT":false,
+       "SUBJECT":false
     }
   })
  
@@ -618,8 +623,10 @@ function App() {
 
   const submitForm = async (e) => {
         e.preventDefault()
+        console.log(userInput)
         if (!validateForm()) {
             alert("wrong form")
+            return 
         }
        
       const federalParams = []
@@ -637,30 +644,26 @@ function App() {
           stateParams.push(curState)
       }
   
+    const locationInfo = {
+        "street1": userInput["general"]["address"],
+        "street2": userInput["general"]["address_line_2"],
+        "city": userInput["general"]["city"],
+        "state": userInput["general"]["state"],
+        "zip": userInput["general"]["zip"]
+    }
 
+    const gross_pay_YTD_included = "gross_pay_YTD" in userInput["general"] && userInput["general"]["gross_pay_YTD"] !== ""
+   
    const firstCall = {
         "wages": [
             {
                 "payType": "REG",
-                "amount": userInput["general"]["gross_pay_YTD"],
-                "location": {
-                    "street1": userInput["general"]["address"],
-                    "street2": userInput["general"]["address_line_2"],
-                    "city": userInput["general"]["city"],
-                    "state": userInput["general"]["state"],
-                    "zip": userInput["general"]["zip"]
-                }
+                "amount": gross_pay_YTD_included ? userInput["general"]["gross_pay_YTD"] : userInput["general"]["gross_pay"],
+                "location": locationInfo
             }
         ],
         "employeeConfig": {
-            "residency": 
-                {
-                    "street1": userInput["general"]["address"],
-                    "street2": userInput["general"]["address_line_2"],
-                    "city": userInput["general"]["city"],
-                    "state": userInput["general"]["state"],
-                    "zip": userInput["general"]["zip"]
-                },
+            "residency": locationInfo,
                 "taxparams": federalParams.concat(stateParams),
                 "accruals": []
         },
@@ -673,7 +676,13 @@ function App() {
     
     const withholdingsRequest = await axios.post("https://engine.staging.joinpuzzl.com/api/calculator/calcTax", firstCall)
 
+    
     const withholdings = withholdingsRequest.data.result
+
+    if (!gross_pay_YTD_included){
+        makeResults(withholdings)
+        return
+    }
     
     var accrual_withholdings = []
     
@@ -694,44 +703,19 @@ function App() {
             {
                 "payType": "REG",
                 "amount": userInput["general"]["gross_pay"],
-                "location": {
-                    "street1": userInput["general"]["address"],
-                    "street2": userInput["general"]["address_line_2"],
-                    "city": userInput["general"]["city"],
-                    "state": userInput["general"]["state"],
-                    "zip": userInput["general"]["zip"]
-                }
+                "location": locationInfo
             }
         ],
         "employeeConfig": {
-            "residency": 
-                {
-                    "street1": userInput["general"]["address"],
-                    "street2": userInput["general"]["address_line_2"],
-                    "city": userInput["general"]["city"],
-                    "state": userInput["general"]["state"],
-                    "zip": userInput["general"]["zip"]
-                },
+            "residency": locationInfo,
                 "taxparams": federalParams.concat(stateParams),
                 "accruals": [
                     {
                         "payDate": dayBeforeString,
-                        "residency":  {
-                            "street1": userInput["general"]["address"],
-                            "street2": userInput["general"]["address_line_2"],
-                            "city": userInput["general"]["city"],
-                            "state": userInput["general"]["state"],
-                            "zip": userInput["general"]["zip"]
-                        },
+                        "residency": locationInfo,
                         "earnings": [
                             {
-                                "location": {
-                                    "street1": userInput["general"]["address"],
-                                    "street2": userInput["general"]["address_line_2"],
-                                    "city": userInput["general"]["city"],
-                                    "state": userInput["general"]["state"],
-                                    "zip": userInput["general"]["zip"]
-                                },
+                                "location": locationInfo,
                                 "amount": userInput["general"]["gross_pay_YTD"],
                                 "payType": "REG"
                             }
@@ -750,24 +734,54 @@ function App() {
     const finalWithholdingsRequest = await axios.post("https://engine.staging.joinpuzzl.com/api/calculator/calcTax", secondCall)
     const finalWithholdings = finalWithholdingsRequest.data.result
     
+    information = [
+    createData("Check date", userInput["general"]["date"]),
+    createData("Gross pay", "$" + userInput["general"]["gross_pay"] ),
+    createData("Gross salary year to date", "$" + userInput["general"]["gross_pay_YTD"] || "---"),
+    createData("Pay frequency", userInput["general"]["pay_frequency"]),
+    createData("Federal filing status", userInput["federal"]["FILINGSTATUS"]),
+    createData("# of federal allowances"),
+    createData("Round federal withholding"),
+    createData("Additional federal witholding"),
+    createData("Addition state witholding"),
+    createData("State filing status"),
+    createData("Dependents"),
+    createData("Exempt from federal tax"),
+    createData("Exempt from FICA tax"),
+    createData("Exempt from medicare tax"),
+    createData("Exempt from state tax")
+    ]
     
+    makeResults(finalWithholdings)
 
-    
+    return
+  }
+
+
+
+
+
+const makeResults = (finalWithholdings) => {
     const grossPay = userInput["general"]["gross_pay"]
     var curCalculations = [createData("Gross pay", grossPay)]
       
     var amountSubtracted = 0
     finalWithholdings.forEach((row) => {
+            if (row["payer"].includes("EMPLOYEE")) {
+                return
+            }
             curCalculations.push(createData(row["name"], row["withheld"]))
             amountSubtracted += row["withheld"]
         }
     )
     curCalculations.push(createData("Net pay", grossPay - amountSubtracted));
-    
+    console.log(curCalculations)
 
     setCalculations(curCalculations)
     setCalculated(true)
-  }
+}
+
+const yes_or_no = [{code:"Yes", value:true}, {code:"No", value:false}]
 
   const backToInput = () => {
       setCalculated(false)
@@ -786,7 +800,7 @@ function App() {
                     <InputLabel style={InstructionStyle}>Let's take a look at your estimated earnings after taxes</InputLabel>
                     <BackButton style={{marginTop: 37}} onClick={backToInput}> Back to calculators </BackButton>
                     <h2 style={InstructionStyle}>Your salary paycheck calculation:</h2>
-                        <TableContainer  >
+                        <TableContainer  style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderBottom:"none"}}>
                             <Table className={classes.table} aria-label="simple table" size='small' >
                                 <TableBody>
                                     {calculations.map((row) => (
@@ -818,7 +832,7 @@ function App() {
                                     <TableCell component="th" scope="row">
                                     {row.name}
                                     </TableCell>
-                                    <TableCell align="right">{"$" + row.amount}</TableCell>
+                                    <TableCell align="right">{row.amount}</TableCell>
                                 </TableRow>
                                 ))}
                             </TableBody>
@@ -835,8 +849,7 @@ function App() {
         <div style={ResultBodyStyle}>
           <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
           <p style={InstructionStyle}>Find out your true estimated earnings after taxes</p>
-          <p>Salary Calculator</p> 
-          
+         
          
           <form style={FormDivStyle} noValidate autoComplete="off" onSubmit={submitForm}>
             <h3 style={InstructionStyle}>First, tell us some general information:</h3>
@@ -878,9 +891,9 @@ function App() {
            { federalTaxParams && federalTaxParams.map((detail) => {
              
              if (detail.type === "options") {
-                userInput["federal"][detail.code] = detail.options[0].code
+                
                return (
-                <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["federal"][detail.code] || detail.options[0].code} onChange={(e) => {handleFormChange(e, "federal", detail.code)}}>
+                <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["federal"][detail.code]} onChange={(e) => {handleFormChange(e, "federal", detail.code)}}>
                {detail.options.map((option) => (
                 <MenuItem value={option.code}>
                     {option.name}
@@ -890,7 +903,7 @@ function App() {
                )
              }
              else if (detail.type === "boolean") {
-                userInput["federal"][detail.code] = false
+                
                 return (
                 <TextField fullWidth={true} style={FormStyle}  size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["federal"][detail.code] || false} onChange={(e) => {handleFormChange(e, "federal", detail.code)}}>
                {[{code:"Yes", value:true}, {code:"No", value:false}].map((option) => (
@@ -913,9 +926,9 @@ function App() {
            { userInput["general"]["state"] && allStatesDetails && allStatesDetails[userInput["general"]["state"]].map((detail) => {
             
              if (detail.type === "options") {
-               userInput["state"][detail.code] = detail.options[0].code
+               
                return (
-                <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["state"][detail.code] || detail.options[0].code} onChange={(e) => {handleFormChange(e, "state", detail.code)}}>
+                <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["state"][detail.code]} onChange={(e) => {handleFormChange(e, "state", detail.code)}}>
                {detail.options.map((option) => (
                 <MenuItem value={option.code}>
                     {option.name}
@@ -925,10 +938,10 @@ function App() {
                )
              }
             else if (detail.type === "boolean") {
-                userInput["state"][detail.code] = false
+                
                 return (
-                <TextField fullWidth={true} style={FormStyle}  size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["state"][detail.code] || false} onChange={(e) => {handleFormChange(e, "state", detail.code)}}>
-               {[{code:"Yes", value:true}, {code:"No", value:false}].map((option) => (
+                <TextField fullWidth={true} style={FormStyle}  size="small" id="outlined-basic" label={detail.code} variant="outlined" select value={userInput["state"][detail.code]} onChange={(e) => {handleFormChange(e, "state", detail.code)}}>
+               {yes_or_no.map((option) => (
                 <MenuItem value={option.value}>
                     {option.code}
                   </MenuItem>
