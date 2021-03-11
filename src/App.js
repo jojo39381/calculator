@@ -123,26 +123,19 @@ var information = [];
 var codeValueMapping = {}
 function App() {
   const [allStatesDetails, setAllStatesDetails] = useState()
-  const [userInput, setUserInput] = useState({
-    "general": {
-        "date": new Date().toISOString().split('T')[0],
-        "state": "AZ",
-        "pay_frequency": "Daily"
-    },
-    "federal": {
-    },
-
-    "state": {
-    }
-  })
+  const [userInput, setUserInput] = useState({})
   useEffect(() => {
       console.log("'")
     axios.post("https://engine.staging.joinpuzzl.com/api/taxparams/getTaxParameterDefinitions")
     .then((response) => {
       setAllStatesDetails(response.data.result)
-      const initial = {...userInput}
+      const initial = {"general": {
+        "date": new Date().toISOString().split('T')[0],
+        "state": "AZ",
+        "pay_frequency": "Daily"
+    }}
       initial["federal"] = prefill(federalTaxParams)
-      initial["state"] = prefill(response.data.result[userInput["general"]["state"]])
+      initial["state"] = prefill(response.data.result["AZ"])
       setUserInput(initial)
       setPrefilled(true)
     })
@@ -429,8 +422,10 @@ const makeResults = (finalWithholdings) => {
           <h1 style={FormTitle}>Paycheck Calculator</h1>
           <p style={InstructionStyle}>Find out your true estimated earnings after taxes</p>
           <form style={FormDivStyle} noValidate autoComplete="off" onSubmit={submitForm}>
+          { prefilled && 
             <div style={FormSectionStyle}>
             <h3 style={FormTitle}>First, tell us some general information:</h3>
+           
             <TextField  label="Check date" type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" value={userInput["general"]["date"] || new Date().toISOString().split('T')[0]} onChange={(e) => {handleFormChange(e, "general", "date")}}/>
             <TextField  fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address" value={userInput["general"]["address"] || ""} onChange={(e) => {handleFormChange(e, "general", "address")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address line 2" value={userInput["general"]["address_line_2"] || ""} onChange={(e) => {handleFormChange(e, "general", "address_line_2")}}/>
@@ -462,7 +457,9 @@ const makeResults = (finalWithholdings) => {
                     </MenuItem>
                 ))}
             </TextField>
+            
             </div>
+          }
             <div style={FormSectionStyle}>
             <h3 style={FormTitle}>Now for some federal information:</h3>
            { prefilled && federalTaxParams && federalTaxParams.map((detail) => {
