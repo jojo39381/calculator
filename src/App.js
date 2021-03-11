@@ -35,6 +35,9 @@ const TableCell = withStyles({
 })(MuiTableCell);
 
 
+const FormSectionStyle = {
+    marginBottom: '50px'
+}
 const ResultBodyStyle = {
     width: "90%",
     margin: "0 auto"
@@ -112,9 +115,14 @@ const ButtonStyle = {
 
 
 const InstructionStyle = {
-  fontFamily: 'Inter'
-
+  fontFamily: 'Inter',
+  fontWeight: '400'
 }
+
+const FormTitle = {
+    fontFamily: 'Inter',
+    fontWeight: '800'
+  }
 
 const states = [
     {
@@ -501,17 +509,6 @@ const federalTaxParams = [{
           "value": false
       }
   ]
-},
-{
-  "code": "SUBJECT",
-  "effectiveDate": 2020,
-  "type": "boolean",
-  "defaults": [
-      {
-          "effectiveDate": 2020,
-          "value": true
-      }
-  ]
 }]
 
 
@@ -531,7 +528,9 @@ function App() {
   const [calculated, setCalculated] = useState(false)
   const [calculations, setCalculations] =useState([])
   const handleFormChange = (event, category, context) => {
+     
     const value = event.target.value
+    console.log(value)
     const temp = {...userInput}
     if (category === "general" && context === "state") {
         const tempState = {}
@@ -586,33 +585,41 @@ function App() {
             continue
         }
         if (!(key in userInput["general"]) || userInput["general"][key] === "" ) {
-            console.log(key)
-            return false
+            
+            return key
         }
 
 
     }
         
       
-      for (var i = 0; i < federalTaxParams.length; i++) {
-        const key = federalTaxParams[i].code
-        if (!(key in userInput["federal"]) || userInput["federal"][key] === "" ) {
-            console.log(key)
-            return false
-        }
+    //  var userFederal = {...userInput["federal"]}
+
+    //   for (var i = 0; i < federalTaxParams.length; i++) {
+    //     const key = federalTaxParams[i].code
+    //     if (!(key in userInput["federal"]) || userInput["federal"][key] === "" ) {
+            
+       
+            
+    //         userFederal[key] = "0"
+           
+            
+            
+    //     }
+    // }
+
+    // for (var j = 0; j < allStatesDetails[userInput["general"]["state"]].length; j++) {
+    //     const key = allStatesDetails[userInput["general"]["state"]][j].code
+    //     if (!(key in userInput["state"]) || userInput["state"][key] === "" ) {
+    //         var statetemp = {...userInput}
+    //         var userState = {...statetemp["state"], key:"0"}
+    //         statetemp["state"] = userState
+    //         setUserInput(statetemp)
+    //     }
 
 
-    }
-    for (var j = 0; j < allStatesDetails[userInput["general"]["state"]].length; j++) {
-        const key = allStatesDetails[userInput["general"]["state"]][j].code
-        if (!(key in userInput["state"]) || userInput["state"][key] === "" ) {
-            console.log(key)
-            return false
-        }
-
-
-    }
-    return true
+    // }
+    return "success"
 
 
 
@@ -623,19 +630,57 @@ function App() {
 
   const submitForm = async (e) => {
         e.preventDefault()
-        console.log(userInput)
-        if (!validateForm()) {
-            alert("wrong form")
+        const formValidated = validateForm()
+
+        if (formValidated !== "success") {
+            alert(`${formValidated} not filled in`)
             return 
         }
-       
+        
       const federalParams = []
       const checkDate = userInput["general"]["date"]
-      const federal = userInput["federal"]
-      for (var key in federal) {
-          const curFederal = {"jurisdiction":"US", "code":key, "value":federal[key]}
-          federalParams.push(curFederal)
-      }
+      information = [
+        createData("Check date", userInput["general"]["date"]),
+        createData("Gross pay", "$" + userInput["general"]["gross_pay"] ),
+        createData("Gross salary year to date", "$" + userInput["general"]["gross_pay_YTD"] || "---"),
+        createData("Pay frequency", userInput["general"]["pay_frequency"]),
+        // createData("Federal filing status", userInput["federal"]["FILINGSTATUS"]),
+        // createData("Additional federal witholding"),
+        // createData("Addition state witholding"),
+        // createData("State filing status"),
+        // createData("Dependents"),
+        // createData("Exempt from federal tax"),
+        // createData("Exempt from FICA tax"),
+        // createData("Exempt from medicare tax"),
+        // createData("Exempt from state tax")
+        ]
+        const federal = userInput["federal"]
+    
+        for (var i = 0; i < federalTaxParams.length; i++) {
+        const key = federalTaxParams[i].code
+        var value = ""
+        if (!(key in userInput["federal"]) || userInput["federal"][key] === "" ) {
+            value = "0"
+        }
+        else {
+            value = federal[key]
+        }
+        const curFederal = {"jurisdiction":"US", "code":key, "value":value}
+        federalParams.push(curFederal)
+        if (typeof(value) == "boolean") {
+            value = value.toString()
+        }
+        information.push(createData(key, value))
+
+    }
+
+    console.log(information)
+
+    //   const federal = userInput["federal"]
+    //   for (var key in federal) {
+    //       const curFederal = {"jurisdiction":"US", "code":key, "value":federal[key]}
+    //       federalParams.push(curFederal)
+    //   }
 
       const stateParams = []
       const stateP = userInput["state"]
@@ -686,8 +731,8 @@ function App() {
     
     var accrual_withholdings = []
     
-    for (var i = 0; i < withholdings.length; i++) {
-        const witholdingObject = withholdings[i]
+    for (var j = 0; j < withholdings.length; j++) {
+        const witholdingObject = withholdings[j]
        
         const cur_withholding = {amount:witholdingObject.withheld, taxType:witholdingObject.codename}
         accrual_withholdings.push(cur_withholding)
@@ -734,23 +779,7 @@ function App() {
     const finalWithholdingsRequest = await axios.post("https://engine.staging.joinpuzzl.com/api/calculator/calcTax", secondCall)
     const finalWithholdings = finalWithholdingsRequest.data.result
     
-    information = [
-    createData("Check date", userInput["general"]["date"]),
-    createData("Gross pay", "$" + userInput["general"]["gross_pay"] ),
-    createData("Gross salary year to date", "$" + userInput["general"]["gross_pay_YTD"] || "---"),
-    createData("Pay frequency", userInput["general"]["pay_frequency"]),
-    createData("Federal filing status", userInput["federal"]["FILINGSTATUS"]),
-    createData("# of federal allowances"),
-    createData("Round federal withholding"),
-    createData("Additional federal witholding"),
-    createData("Addition state witholding"),
-    createData("State filing status"),
-    createData("Dependents"),
-    createData("Exempt from federal tax"),
-    createData("Exempt from FICA tax"),
-    createData("Exempt from medicare tax"),
-    createData("Exempt from state tax")
-    ]
+    
     
     makeResults(finalWithholdings)
 
@@ -765,16 +794,17 @@ const makeResults = (finalWithholdings) => {
     const grossPay = userInput["general"]["gross_pay"]
     var curCalculations = [createData("Gross pay", grossPay)]
       
-    var amountSubtracted = 0
+    var amountSubtracted = 0.00
     finalWithholdings.forEach((row) => {
             if (row["payer"].includes("EMPLOYEE")) {
                 return
             }
-            curCalculations.push(createData(row["name"], row["withheld"]))
+            curCalculations.push(createData(row["name"], row["withheld"].toFixed(2)))
             amountSubtracted += row["withheld"]
         }
     )
-    curCalculations.push(createData("Net pay", grossPay - amountSubtracted));
+    
+    curCalculations.push(createData("Net pay", (parseInt(grossPay) - amountSubtracted).toFixed(2)));
     console.log(curCalculations)
 
     setCalculations(curCalculations)
@@ -796,26 +826,27 @@ const yes_or_no = [{code:"Yes", value:true}, {code:"No", value:false}]
             <Grid  container spacing={12}>
             <Grid style={{ margin:"0 auto"}} item xs={12} md={6} lg={4}>
             <div style={ResultBodyStyle}>
-                    <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
+                    <h1 style={FormTitle}>Salary Paycheck Calculator</h1>
                     <InputLabel style={InstructionStyle}>Let's take a look at your estimated earnings after taxes</InputLabel>
                     <BackButton style={{marginTop: 37}} onClick={backToInput}> Back to calculators </BackButton>
-                    <h2 style={InstructionStyle}>Your salary paycheck calculation:</h2>
-                        <TableContainer  style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderBottom:"none"}}>
+                    <div style={FormSectionStyle}>
+                    <h2 style={FormTitle}>Your salary paycheck calculation:</h2>
+                        <TableContainer  style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderRadius: 20}}>
                             <Table className={classes.table} aria-label="simple table" size='small' >
                                 <TableBody>
                                     {calculations.map((row) => (
                                     <TableRow key={row.name}>
                                         { row.name !== "Net pay" ? 
-                                            <TableCell component="th" scope="row">
+                                            <TableCell style={{border:"None"}} component="th" scope="row">
                                                 {row.name}
                                             </TableCell> :
-                                            <BoldTableCell component="th" scope="row">
+                                            <BoldTableCell style={{border:"None"}} component="th" scope="row">
                                                 {row.name}
                                             </BoldTableCell>
                                         }
                                         { row.name !== "Net pay" ? 
-                                            <TableCell align="right">{"$" + row.amount}</TableCell> :
-                                            <BoldTableCell align="right">{"$" + row.amount}</BoldTableCell>
+                                            <TableCell style={{border:"None"}} align="right">{"$" + row.amount}</TableCell> :
+                                            <BoldTableCell style={{border:"None"}} align="right">{"$" + row.amount}</BoldTableCell>
                                         }
                                         
                                     </TableRow>
@@ -823,22 +854,24 @@ const yes_or_no = [{code:"Yes", value:true}, {code:"No", value:false}]
                                 </TableBody>
                             </Table>
                         </TableContainer>
-                    <h2 style={InstructionStyle}>Results are based on:</h2>
-                    <TableContainer style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderBottom:"none"}}>
+                        </div>
+                        <div style={FormSectionStyle}>
+                    <h2 style={FormTitle}>Results are based on:</h2>
+                    <TableContainer style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderRadius: 20}}>
                         <Table className={classes.table} aria-label="simple table" size='small'>
                             <TableBody>
                                 {information.map((row) => (
                                 <TableRow key={row.name} >
-                                    <TableCell component="th" scope="row">
+                                    <TableCell style={{border:"None"}} component="th" scope="row">
                                     {row.name}
                                     </TableCell>
-                                    <TableCell align="right">{row.amount}</TableCell>
+                                    <TableCell style={{border:"None"}} align="right">{row.name === "Check date" ? row.amount.replaceAll("-", "/"): row.amount}</TableCell>
                                 </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
                     </TableContainer>
-
+                    </div>
                     <EditButton style={{marginTop: 26}} variant="outlined" onClick={backToInput}>Edit</EditButton>
                 </div>
                 </Grid>
@@ -847,16 +880,17 @@ const yes_or_no = [{code:"Yes", value:true}, {code:"No", value:false}]
         <Grid  container spacing={12}>
         <Grid style={{ margin:"0 auto"}} item xs={9} md={6} lg={4}>
         <div style={ResultBodyStyle}>
-          <h1 style={InstructionStyle}>Salary Paycheck Calculator</h1>
+          <h1 style={FormTitle}>Salary Paycheck Calculator</h1>
           <p style={InstructionStyle}>Find out your true estimated earnings after taxes</p>
          
          
           <form style={FormDivStyle} noValidate autoComplete="off" onSubmit={submitForm}>
-            <h3 style={InstructionStyle}>First, tell us some general information:</h3>
-            <TextField label="check date" type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" value={userInput["general"]["date"] || new Date().toISOString().split('T')[0]} onChange={(e) => {handleFormChange(e, "general", "date")}}/>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="address" value={userInput["general"]["address"] || ""} onChange={(e) => {handleFormChange(e, "general", "address")}}/>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="address line 2" value={userInput["general"]["address_line_2"] || ""} onChange={(e) => {handleFormChange(e, "general", "address_line_2")}}/>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="city" value={userInput["general"]["city"] || ""} onChange={(e) => {handleFormChange(e, "general", "city")}}/>
+            <div style={FormSectionStyle}>
+            <h3 style={FormTitle}>First, tell us some general information:</h3>
+            <TextField  label="Check date" type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" value={userInput["general"]["date"] || new Date().toISOString().split('T')[0]} onChange={(e) => {handleFormChange(e, "general", "date")}}/>
+            <TextField  fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address" value={userInput["general"]["address"] || ""} onChange={(e) => {handleFormChange(e, "general", "address")}}/>
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address line 2" value={userInput["general"]["address_line_2"] || ""} onChange={(e) => {handleFormChange(e, "general", "address_line_2")}}/>
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="City" value={userInput["general"]["city"] || ""} onChange={(e) => {handleFormChange(e, "general", "city")}}/>
             
             <TextField
                 fullWidth={true}
@@ -875,18 +909,19 @@ const yes_or_no = [{code:"Yes", value:true}, {code:"No", value:false}]
                   </MenuItem>
                 ))}
             </TextField>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="zip" value={userInput["general"]["zip"] || ""} onChange={(e) => {handleFormChange(e, "general", "zip")}}/>
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Zip" value={userInput["general"]["zip"] || ""} onChange={(e) => {handleFormChange(e, "general", "zip")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay" variant="outlined"  value={userInput["general"]["gross_pay"] || ""} onChange={(e) => {handleFormChange(e, "general", "gross_pay")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay YTD" variant="outlined" value={userInput["general"]["gross_pay_YTD"] || ""} onChange={(e) => {handleFormChange(e, "general", "gross_pay_YTD")}}/>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" select label="Pay Frequency" variant="outlined" value={userInput["general"]["pay_frequency"] || freqs[0]} onChange={(e) => {handleFormChange(e, "general", "pay_frequency")}}>
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" select label="Pay frequency" variant="outlined" value={userInput["general"]["pay_frequency"] || freqs[0]} onChange={(e) => {handleFormChange(e, "general", "pay_frequency")}}>
             {freqs.map((freqOption) => (
                     <MenuItem value={freqOption}>
                       {freqOption}
                     </MenuItem>
                 ))}
             </TextField>
-                  
-            <h3 style={InstructionStyle}>Now for some federal information:</h3>
+            </div>
+            <div style={FormSectionStyle}>
+            <h3 style={FormTitle}>Now for some federal information:</h3>
                 
            { federalTaxParams && federalTaxParams.map((detail) => {
              
@@ -922,7 +957,9 @@ const yes_or_no = [{code:"Yes", value:true}, {code:"No", value:false}]
             })
             
            }
-           <h3 style={InstructionStyle}>Now for some state information:</h3>
+           </div>
+           <div style={FormSectionStyle}>
+           <h3 style={FormTitle}>Now for some state information:</h3>
            { userInput["general"]["state"] && allStatesDetails && allStatesDetails[userInput["general"]["state"]].map((detail) => {
             
              if (detail.type === "options") {
@@ -962,8 +999,9 @@ const yes_or_no = [{code:"Yes", value:true}, {code:"No", value:false}]
             })
            }
             
-          
+           </div>
             <ContinueButton type="submit" style={ButtonStyle} variant="contained" color="primary">Continue</ContinueButton>
+            
           </form>
           
         </div>
