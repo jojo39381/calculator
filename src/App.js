@@ -153,7 +153,7 @@ function App() {
         else if (cur[i].type === "options") {
             tempState[cur[i].code] = cur[i].options[0].code
             var mapping = {}
-            var options = cur[i].options.length
+            var options = cur[i].options
             for (var y = 0; y < options.length; y++) {
                 mapping[options[y].code] = options[y].name
             }
@@ -212,10 +212,14 @@ const getReadableValue = (key, value) => {
         }
       const federalParams = []
       const checkDate = userInput["general"]["date"]
+      var dateList = checkDate.split("-").slice(1)
+      dateList.push(checkDate.split("-")[0])
+      console.log(dateList)
       information = [
-        createData("Check date", userInput["general"]["date"]),
+
+        createData("Check date", dateList.join("/")),
         createData("Gross pay", "$" + userInput["general"]["gross_pay"] ),
-        createData("Gross salary year to date", "$" + userInput["general"]["gross_pay_YTD"] || "---"),
+        createData("Gross salary year to date", "$" + (userInput["general"]["gross_pay_YTD"] || "---")),
         createData("Pay frequency", userInput["general"]["pay_frequency"])
         ]
         const federal = userInput["federal"]
@@ -250,7 +254,7 @@ const getReadableValue = (key, value) => {
     else {
         stvalue = stateP[stateKey]
     }
-    const curState = {"jurisdiction":userInput["general"]["state"], "code":stateKey, "value":stateP[stateKey]}
+    const curState = {"jurisdiction":userInput["general"]["state"], "code":stateKey, "value":stvalue}
     
     stateParams.push(curState)
     if (typeof(stvalue) == "boolean") {
@@ -331,6 +335,7 @@ const getReadableValue = (key, value) => {
         "payFrequency": userInput["general"]["pay_frequency"],
         "payDate": userInput["general"]["date"]
     } 
+    console.log(secondCall)
     const finalWithholdingsRequest = await axios.post("https://engine.staging.joinpuzzl.com/api/calculator/calcTax", secondCall)
     const finalWithholdings = finalWithholdingsRequest.data.result
     makeResults(finalWithholdings)
@@ -405,7 +410,7 @@ const makeResults = (finalWithholdings) => {
                                     <TableCell style={{border:"None"}} component="th" scope="row">
                                     {row.name}
                                     </TableCell>
-                                    <TableCell style={{border:"None"}} align="right">{row.name === "Check date" ? row.amount.replaceAll("-", "/"): row.amount}</TableCell>
+                                    <TableCell style={{border:"None"}} align="right">{row.amount}</TableCell>
                                 </TableRow>
                                 ))}
                             </TableBody>
