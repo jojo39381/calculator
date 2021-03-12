@@ -46,11 +46,7 @@ const useStyles = makeStyles({
     },
 });
 
-const BoldTableCell = withStyles((theme) => ({
-    body: {
-      fontWeight: "bold",
-    },
-}))(TableCell);
+
 
 const BackButton = withStyles({
     root: {
@@ -214,16 +210,20 @@ const getReadableValue = (key, value) => {
       const checkDate = userInput["general"]["date"]
       var dateList = checkDate.split("-").slice(1)
       dateList.push(checkDate.split("-")[0])
-      console.log(dateList)
+      const grossPay = parseInt(userInput["general"]["gross_pay"]).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
       information = [
-
         createData("Check date", dateList.join("/")),
-        createData("Gross pay", "$" + userInput["general"]["gross_pay"] ),
-        createData("Gross salary year to date", "$" + (userInput["general"]["gross_pay_YTD"] || "---")),
+        createData("Gross pay", "$" + grossPay),
+        createData("Gross pay year to date", "$" + (parseInt(userInput["general"]["gross_pay_YTD"]).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          }) || "---")),
         createData("Pay frequency", userInput["general"]["pay_frequency"])
         ]
         const federal = userInput["federal"]
-    
         for (var i = 0; i < federalTaxParams.length; i++) {
         const key = federalTaxParams[i].code
         var value = ""
@@ -342,19 +342,29 @@ const getReadableValue = (key, value) => {
     return
   }
 const makeResults = (finalWithholdings) => {
-    const grossPay = userInput["general"]["gross_pay"]
-    var curCalculations = [createData("Gross pay", grossPay)]
+    const grossPay = parseInt(userInput["general"]["gross_pay"])
+    var curCalculations = [createData("Gross pay", grossPay.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }))]
       
     var amountSubtracted = 0.00
     finalWithholdings.forEach((row) => {
             if (row["payer"].includes("EMPLOYEE")) {
                 return
             }
-            curCalculations.push(createData(row["name"], row["withheld"].toFixed(2)))
+            curCalculations.push(createData(row["name"], row["withheld"].toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })))
             amountSubtracted += row["withheld"]
+            console.log(amountSubtracted)
         }
     )      
-    curCalculations.push(createData("Net pay", (parseInt(grossPay) - amountSubtracted).toFixed(2)));
+    curCalculations.push(createData("Net pay", (grossPay - amountSubtracted).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })));
     console.log(curCalculations)
     setCalculations(curCalculations)
     setCalculated(true)
@@ -377,30 +387,19 @@ const makeResults = (finalWithholdings) => {
                     <BackButton style={{marginTop: 37}} onClick={backToInput}><img src={Back} width={15} height={15} alt="None"></img>Back to calculators </BackButton>
                     <div style={FormSectionStyle}>
                     <h2 style={FormTitle}>Your paycheck calculation:</h2>
-                        <TableContainer  style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderRadius: 5}}>
-                            <Table className={classes.table} aria-label="simple table" >
-                                <TableBody>
-                                    {calculations.map((row, i) => (
-                                      
-                                    <TableRow key={row.name}>
-                                        { row.name !== "Net pay" ? 
-                                            <TableCell style={{border: i === calculations.length - 2 ? "5 solid #B2BEC3" : "None"}} component="th" scope="row">
-                                                {row.name}
-                                            </TableCell> :
-                                            <BoldTableCell style={{border:"None"}} component="th" scope="row">
-                                                {row.name}
-                                            </BoldTableCell>
-                                        }
-                                        { row.name !== "Net pay" ? 
-                                            <TableCell style={{border: i === calculations.length - 2 ? "5 solid #B2BEC3" : "None"}} align="right">{"$" + row.amount}</TableCell> :
-                                            <BoldTableCell style={{border:"None", borderTop:"5 solid #B2BEC3"}} align="right">{"$" + row.amount}</BoldTableCell>
-                                        }
-                                    </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                        <div style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderRadius: 5, color:"black", fontSize:15, padding:10}}>
+                            {calculations.map((row, i) => (
+                                <Grid container spacing={0}>
+                                    <Grid style={{padding:10, textAlign:"left", fontWeight:(i === calculations.length - 1 ? 800 : ""), borderTop: (i === calculations.length - 1 ? "0.5px solid #B2BEC3" : "None") }} item sm={6}>
+                                        {row.name}
+                                    </Grid>
+                                    <Grid style={{padding:10, textAlign:"right", fontWeight:(i === calculations.length - 1 ? 800 : ""), borderTop: (i === calculations.length - 1 ? "0.5px solid #B2BEC3" : "None") }} item sm={6}>
+                                        {row.amount}
+                                    </Grid>     
+                                </Grid>
+                            ))}
                         </div>
+                    </div>
                     <h2 style={FormTitle}>Results are based on:</h2>
                     <TableContainer style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderRadius: 5}}>
                         <Table className={classes.table} aria-label="simple table">
@@ -432,10 +431,11 @@ const makeResults = (finalWithholdings) => {
             <h3 style={FormTitle}>First, tell us some general information:</h3>
            
             <TextField  label="Check date" type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" value={userInput["general"]["date"] || new Date().toISOString().split('T')[0]} onChange={(e) => {handleFormChange(e, "general", "date")}}/>
-            <TextField  fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address" value={userInput["general"]["address"] || ""} onChange={(e) => {handleFormChange(e, "general", "address")}}/>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address line 2" value={userInput["general"]["address_line_2"] || ""} onChange={(e) => {handleFormChange(e, "general", "address_line_2")}}/>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="City" value={userInput["general"]["city"] || ""} onChange={(e) => {handleFormChange(e, "general", "city")}}/>
+            <TextField  required fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address" value={userInput["general"]["address"] || ""} onChange={(e) => {handleFormChange(e, "general", "address")}}/>
+            <TextField  required fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address line 2" value={userInput["general"]["address_line_2"] || ""} onChange={(e) => {handleFormChange(e, "general", "address_line_2")}}/>
+            <TextField required fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="City" value={userInput["general"]["city"] || ""} onChange={(e) => {handleFormChange(e, "general", "city")}}/>
             <TextField
+                
                 fullWidth={true}
                 style={FormStyle}
                 size="small"
@@ -452,10 +452,10 @@ const makeResults = (finalWithholdings) => {
                   </MenuItem>
                 ))}
             </TextField>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Zip" value={userInput["general"]["zip"] || ""} onChange={(e) => {handleFormChange(e, "general", "zip")}}/>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay" variant="outlined"  value={userInput["general"]["gross_pay"] || ""} onChange={(e) => {handleFormChange(e, "general", "gross_pay")}}/>
+            <TextField required fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Zip" value={userInput["general"]["zip"] || ""} onChange={(e) => {handleFormChange(e, "general", "zip")}}/>
+            <TextField required fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay" variant="outlined"  value={userInput["general"]["gross_pay"] || ""} onChange={(e) => {handleFormChange(e, "general", "gross_pay")}}/>
             <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label="Gross pay YTD" variant="outlined" value={userInput["general"]["gross_pay_YTD"] || ""} onChange={(e) => {handleFormChange(e, "general", "gross_pay_YTD")}}/>
-            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" select label="Pay frequency" variant="outlined" value={userInput["general"]["pay_frequency"] || freqs[0]} onChange={(e) => {handleFormChange(e, "general", "pay_frequency")}}>
+            <TextField required fullWidth={true} style={FormStyle} size="small" id="outlined-basic" select label="Pay frequency" variant="outlined" value={userInput["general"]["pay_frequency"] || freqs[0]} onChange={(e) => {handleFormChange(e, "general", "pay_frequency")}}>
             {freqs.map((freqOption) => (
                     <MenuItem value={freqOption}>
                       {freqOption}
