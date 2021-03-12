@@ -366,7 +366,7 @@ const makeResults = (finalWithholdings) => {
       <header className="App-header"/>
       {calculated ?
             <Grid  container spacing={12}>
-            <Grid style={{ margin:"0 auto"}} item xs={8} sm={8} md={6} lg={4}>
+            <Grid style={{ margin:"0 auto"}} item xs={12} sm={8} md={6} lg={4}>
             <div style={ResultBodyStyle}>
                     <h1 style={FormTitle}>Paycheck Calculator</h1>
                     <InputLabel style={InstructionStyle}>Let's take a look at your estimated earnings after taxes</InputLabel>
