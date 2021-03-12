@@ -10,22 +10,11 @@ import Back from './back.png'
 import axios from 'axios'
 
 import {Button} from '@material-ui/core'
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
 
-import TableContainer from '@material-ui/core/TableContainer';
-
-import TableRow from '@material-ui/core/TableRow';
-
-import { withStyles, makeStyles } from '@material-ui/core/styles';
+import { withStyles} from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
-import MuiTableCell from "@material-ui/core/TableCell";
 
-const TableCell = withStyles({
-  root: {
-    borderBottom: "0.5px solid #B2BEC3"
-  }
-})(MuiTableCell);
+
 
 
 const FormSectionStyle = {
@@ -40,11 +29,7 @@ function createData(name, amount) {
     return {name, amount};
 }
 
-const useStyles = makeStyles({
-    table: {
-        minWidth: 400,
-    },
-});
+
 
 
 
@@ -214,13 +199,14 @@ const getReadableValue = (key, value) => {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       })
+      const gross_pay_ytd = userInput["general"]["gross_pay_YTD"] && userInput["general"]["gross_pay_YTD"] !== "" ? parseInt(userInput["general"]["gross_pay_YTD"]).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) : "---"
       information = [
         createData("Check date", dateList.join("/")),
         createData("Gross pay", "$" + grossPay),
-        createData("Gross pay year to date", "$" + (parseInt(userInput["general"]["gross_pay_YTD"]).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          }) || "---")),
+        createData("Gross pay year to date", "$" +  gross_pay_ytd),
         createData("Pay frequency", userInput["general"]["pay_frequency"])
         ]
         const federal = userInput["federal"]
@@ -374,13 +360,13 @@ const makeResults = (finalWithholdings) => {
       setCalculated(false)
       setCalculations([])
   }
-  const classes = useStyles();
+
   return (
     <div className="App">
       <header className="App-header"/>
       {calculated ?
             <Grid  container spacing={12}>
-            <Grid style={{ margin:"0 auto"}} item xs={12} md={6} lg={4}>
+            <Grid style={{ margin:"0 auto"}} item xs={8} sm={8} md={6} lg={4}>
             <div style={ResultBodyStyle}>
                     <h1 style={FormTitle}>Paycheck Calculator</h1>
                     <InputLabel style={InstructionStyle}>Let's take a look at your estimated earnings after taxes</InputLabel>
@@ -389,32 +375,31 @@ const makeResults = (finalWithholdings) => {
                     <h2 style={FormTitle}>Your paycheck calculation:</h2>
                         <div style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderRadius: 5, color:"black", fontSize:15, padding:10}}>
                             {calculations.map((row, i) => (
-                                <Grid container spacing={0}>
-                                    <Grid style={{padding:10, textAlign:"left", fontWeight:(i === calculations.length - 1 ? 800 : ""), borderTop: (i === calculations.length - 1 ? "0.5px solid #B2BEC3" : "None") }} item sm={6}>
+                                <Grid container spacing={0} >
+                                    <Grid style={{ padding:10, textAlign:"left", fontWeight:(i === calculations.length - 1 ? 800 : ""), borderTop: (i === calculations.length - 1 ? "0.5px solid #B2BEC3" : "None") }} item xs={6}>
                                         {row.name}
                                     </Grid>
-                                    <Grid style={{padding:10, textAlign:"right", fontWeight:(i === calculations.length - 1 ? 800 : ""), borderTop: (i === calculations.length - 1 ? "0.5px solid #B2BEC3" : "None") }} item sm={6}>
-                                        {row.amount}
+                                    <Grid style={{padding:10, textAlign:"right", fontWeight:(i === calculations.length - 1 ? 800 : ""), borderTop: (i === calculations.length - 1 ? "0.5px solid #B2BEC3" : "None") }} item xs={6}>
+                                        {"$" + row.amount}
                                     </Grid>     
                                 </Grid>
                             ))}
                         </div>
                     </div>
                     <h2 style={FormTitle}>Results are based on:</h2>
-                    <TableContainer style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderRadius: 5}}>
-                        <Table className={classes.table} aria-label="simple table">
-                            <TableBody>
-                                {information.map((row) => (
-                                <TableRow key={row.name} >
-                                    <TableCell style={{border:"None"}} component="th" scope="row">
-                                    {row.name}
-                                    </TableCell>
-                                    <TableCell style={{border:"None"}} align="right">{row.amount}</TableCell>
-                                </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <div style={{borderWidth:0.5, borderStyle:"solid", borderColor:"#B2BEC3", borderRadius: 5, color:"black", fontSize:15, padding:10}}>
+                            {information.map((row) => (
+                                <Grid container spacing={0} >
+                                    <Grid style={{ padding:10, textAlign:"left"}} item xs={6}>
+                                        {row.name}
+                                    </Grid>
+                                    <Grid style={{padding:10, textAlign:"right"}} item xs={6}>
+                                        {row.amount}
+                                    </Grid>     
+                                </Grid>
+                            ))}
+                        </div>
+                    
                     </div>
                     <EditButton style={{marginTop: 26}} variant="outlined" onClick={backToInput}>Edit</EditButton>
                 </Grid>
