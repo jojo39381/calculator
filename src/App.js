@@ -3,20 +3,12 @@ import './App.css';
 import React, {useState, useEffect} from 'react';
 import {TextField} from '@material-ui/core'
 import {InputLabel} from '@material-ui/core'
-
 import {MenuItem} from '@material-ui/core'
 import Back from './back.png'
-
 import axios from 'axios'
-
 import {Button} from '@material-ui/core'
-
 import { withStyles} from '@material-ui/core/styles';
 import Grid from '@material-ui/core/Grid';
-
-
-
-
 const FormSectionStyle = {
     marginBottom: '50px'
 }
@@ -24,15 +16,9 @@ const ResultBodyStyle = {
     width: "90%",
     margin: "0 auto"
 }
-
 function createData(name, amount) {
     return {name, amount};
 }
-
-
-
-
-
 const BackButton = withStyles({
     root: {
       color: '#0066ff',
@@ -41,7 +27,6 @@ const BackButton = withStyles({
       textTransform: 'none',
     },
 })(Button);
-
 const EditButton = withStyles({
     root: {
         borderRadius: 4,
@@ -101,12 +86,13 @@ const freqs = [
 ]
 const federalTaxParams = require("./federalTaxParams.json")
 var information = [];
+var federalData = [];
+var stateData = [];
 var codeValueMapping = {}
 function App() {
   const [allStatesDetails, setAllStatesDetails] = useState()
   const [userInput, setUserInput] = useState({})
   useEffect(() => {
-      console.log("'")
     axios.post("https://engine.staging.joinpuzzl.com/api/taxparams/getTaxParameterDefinitions")
     .then((response) => {
       setAllStatesDetails(response.data.result)
@@ -138,14 +124,12 @@ function App() {
             for (var y = 0; y < options.length; y++) {
                 mapping[options[y].code] = options[y].name
             }
-
             codeValueMapping[cur[i].code] = {"valueMap":mapping, "type":cur[i].type}
         }
         else {
             codeValueMapping[cur[i].code] = {"valueMap":{}, "type":cur[i].type}
         }
     }
-    console.log(codeValueMapping)
     return tempState
   }
   const handleFormChange = (event, category, context) => {
@@ -183,14 +167,16 @@ const getReadableValue = (key, value) => {
         return '$' + value
     }
 }
+  const [errorMsg, setErrorMsg] = useState("")
   const submitForm = async (e) => {
         e.preventDefault()
         const formValidated = validateForm()
 
         if (formValidated !== "success") {
-            alert(`${formValidated} not filled in`)
+            setErrorMsg(`Error: ${formValidated} field not filled in`)
             return 
         }
+      setErrorMsg("")
       const federalParams = []
       const checkDate = userInput["general"]["date"]
       var dateList = checkDate.split("-").slice(1)
@@ -224,13 +210,12 @@ const getReadableValue = (key, value) => {
         if (typeof(value) == "boolean") {
             value = value.toString()
         }
-        information.push(createData(key, getReadableValue(key, value)))
+        federalData.push(createData(key, getReadableValue(key, value)))
 
         }
     const stateParams = []
     const stateP = userInput["state"]
     const stateDetail = allStatesDetails[userInput['general']['state']]
-   
     for (var z = 0; z < stateDetail.length; z++) {
     const stateKey = stateDetail[z].code
     var stvalue = ""
@@ -246,7 +231,7 @@ const getReadableValue = (key, value) => {
     if (typeof(stvalue) == "boolean") {
         stvalue = stvalue.toString()
     }
-    information.push(createData(stateKey, getReadableValue(stateKey, stvalue)))
+    stateData.push(createData(stateKey, getReadableValue(stateKey, stvalue)))
 }
     const locationInfo = {
         "street1": userInput["general"]["address"],
@@ -333,7 +318,6 @@ const makeResults = (finalWithholdings) => {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       }))]
-      
     var amountSubtracted = 0.00
     finalWithholdings.forEach((row) => {
             if (row["payer"].includes("EMPLOYEE")) {
@@ -360,7 +344,6 @@ const makeResults = (finalWithholdings) => {
       setCalculated(false)
       setCalculations([])
   }
-
   return (
     <div className="App">
       <header className="App-header"/>
@@ -398,6 +381,36 @@ const makeResults = (finalWithholdings) => {
                                     </Grid>     
                                 </Grid>
                             ))}
+                            <Grid container spacing={0} >
+                                <Grid style={{ padding:10, textAlign:"left", borderBottom: "0.5px solid #B2BEC3", fontWeight:800}} item xs={12}>
+                                    {"Federal"}
+                                </Grid>  
+                              </Grid>
+                            {federalData.map((row) => (
+                                <Grid container spacing={0} >
+                                    <Grid style={{ padding:10, textAlign:"left"}} item xs={6}>
+                                        {row.name}
+                                    </Grid>
+                                    <Grid style={{padding:10, textAlign:"right"}} item xs={6}>
+                                        {row.amount}
+                                    </Grid>     
+                                </Grid>
+                            ))}
+                            <Grid container spacing={0} >
+                                <Grid style={{ padding:10, textAlign:"left", borderBottom: "0.5px solid #B2BEC3", fontWeight:800}} item xs={12}>
+                                    {"State"}
+                                </Grid>  
+                              </Grid>
+                            {stateData.map((row) => (
+                                <Grid container spacing={0} >
+                                    <Grid style={{ padding:10, textAlign:"left"}} item xs={6}>
+                                        {row.name}
+                                    </Grid>
+                                    <Grid style={{padding:10, textAlign:"right"}} item xs={6}>
+                                        {row.amount}
+                                    </Grid>     
+                                </Grid>
+                            ))}
                         </div>
                     
                     </div>
@@ -414,13 +427,11 @@ const makeResults = (finalWithholdings) => {
           { prefilled && 
             <div style={FormSectionStyle}>
             <h3 style={FormTitle}>First, tell us some general information:</h3>
-           
             <TextField  label="Check date" type='date' fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" value={userInput["general"]["date"] || new Date().toISOString().split('T')[0]} onChange={(e) => {handleFormChange(e, "general", "date")}}/>
             <TextField  required fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address" value={userInput["general"]["address"] || ""} onChange={(e) => {handleFormChange(e, "general", "address")}}/>
-            <TextField  required fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address line 2" value={userInput["general"]["address_line_2"] || ""} onChange={(e) => {handleFormChange(e, "general", "address_line_2")}}/>
+            <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="Address line 2" value={userInput["general"]["address_line_2"] || ""} onChange={(e) => {handleFormChange(e, "general", "address_line_2")}}/>
             <TextField required fullWidth={true} style={FormStyle} size="small" id="outlined-basic" variant="outlined" label="City" value={userInput["general"]["city"] || ""} onChange={(e) => {handleFormChange(e, "general", "city")}}/>
             <TextField
-                
                 fullWidth={true}
                 style={FormStyle}
                 size="small"
@@ -447,7 +458,6 @@ const makeResults = (finalWithholdings) => {
                     </MenuItem>
                 ))}
             </TextField>
-            
             </div>
           }
             <div style={FormSectionStyle}>
@@ -473,17 +483,13 @@ const makeResults = (finalWithholdings) => {
                   </MenuItem>
                ))}
                 </TextField>
-               )
-            }
+               )}
             else {
               return (
                 <TextField fullWidth={true} style={FormStyle} size="small" id="outlined-basic" label={detail.code} variant="outlined"  value={userInput["federal"][detail.code] || ""} onChange={(e) => {handleFormChange(e, "federal", detail.code)}}/>
               )
-            }
-            })
-           }
+            }})}
            </div>
-           <div style={FormSectionStyle}>
            <h3 style={FormTitle}>Now for some state information:</h3>
            { prefilled && userInput["general"]["state"] && allStatesDetails && allStatesDetails[userInput["general"]["state"]].map((detail) => {
              if (detail.type === "options") {
@@ -512,8 +518,8 @@ const makeResults = (finalWithholdings) => {
               )
             }})
            } 
-           </div>
             <ContinueButton type="submit" style={ButtonStyle} variant="contained" color="primary">Continue</ContinueButton>
+            {errorMsg !== "" ? <p style={{display:"inline-block", marginLeft:20, color:"red"}}>{errorMsg}</p> : null}
           </form>
         </div>
        </Grid>
@@ -522,4 +528,5 @@ const makeResults = (finalWithholdings) => {
     </div>
   );
 }
+
 export default App;
